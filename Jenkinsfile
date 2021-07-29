@@ -1,6 +1,6 @@
 node {
 
-    stage('Startup Clean') {
+    stage('Startup Process') {
         sh 'rm -f -r -d *'
         sh 'rm -f -r -d .[!.]* ..?*'
     }
@@ -42,7 +42,7 @@ node {
         }
     }
 
-    stage('End Clean') {
+    stage('Fininish Process') {
         sh 'rm -f -r -d *'
         sh 'rm -f -r -d .[!.]* ..?*'
     }
