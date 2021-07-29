@@ -42,7 +42,7 @@ node {
         }
     }
 
-    stage('Fininish Process') {
+    stage('Finish Process') {
         sh 'rm -f -r -d *'
         sh 'rm -f -r -d .[!.]* ..?*'
     }
