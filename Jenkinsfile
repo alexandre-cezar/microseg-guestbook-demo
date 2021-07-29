@@ -27,7 +27,7 @@ node {
         }
     }
 
-    stage('Get AporetoC Creds') {
+    stage('Get Microsegmentation Creds') {
         withCredentials([file(credentialsId: 'aporeto-creds', variable: 'mycreds')]) {
             sh "cp \$mycreds $WORKSPACE/default.creds"
         }       

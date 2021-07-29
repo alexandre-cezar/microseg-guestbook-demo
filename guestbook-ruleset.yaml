@@ -1,69 +1,99 @@
-APIVersion: 1
+APIVersion: 0
 data:
+  externalnetworks: []
   networkrulesetpolicies:
-  - name: guestbook backend intra-app
-    incomingRules:
-    - action: Allow
-      logsDisabled: false
-      object:
-      - - '@org:cloudaccount={{.Values.cloudAccount}}'
-        - '@org:group={{.Values.group}}'
-        - '@org:kubernetes={{.Values.ns}}'
-        - '@org:tenant={{.Values.tenant}}'
-        - tier=backend
-      observationEnabled: false
-      protocolPorts:
-      - any
-    - action: Allow
-      logsDisabled: false
-      object:
-      - - '@org:cloudaccount={{.Values.cloudAccount}}'
-        - '@org:group={{.Values.group}}'
-        - '@org:kubernetes={{.Values.ns}}'
-        - '@org:tenant={{.Values.tenant}}'
-        - tier=frontend
-      observationEnabled: false
-      protocolPorts:
-      - any
-    outgoingRules:
-    - action: Allow
-      logsDisabled: false
-      object:
-      - - '@org:cloudaccount={{.Values.cloudAccount}}'
-        - '@org:group={{.Values.group}}'
-        - '@org:kubernetes={{.Values.ns}}'
-        - '@org:tenant={{.Values.tenant}}'
-        - tier=backend
-      observationEnabled: false
-      protocolPorts:
-      - any
-    propagate: true
-    subject:
-    - - '@org:cloudaccount={{.Values.cloudAccount}}'
-      - '@org:group={{.Values.group}}'
-      - '@org:kubernetes={{.Values.ns}}'
-      - '@org:tenant={{.Values.tenant}}'
-      - tier=backend
-  - name: guestbook frontend intra-app
-    outgoingRules:
-    - action: Allow
-      logsDisabled: false
-      object:
-      - - '@org:cloudaccount={{.Values.cloudAccount}}'
-        - '@org:group={{.Values.group}}'
-        - '@org:kubernetes={{.Values.ns}}'
-        - '@org:tenant={{.Values.tenant}}'
-        - tier=backend
-      observationEnabled: false
-      protocolPorts:
-      - any
-    propagate: true
-    subject:
-    - - '@org:cloudaccount={{.Values.cloudAccount}}'
-      - '@org:group={{.Values.group}}'
-      - '@org:kubernetes={{.Values.ns}}'
-      - '@org:tenant={{.Values.tenant}}'
-      - tier=frontend
+    - incomingRules:
+        - action: Allow
+          logsDisabled: false
+          object:
+            - - $identity=processingunit
+              - '$image=gcr.io/google_samples/gb-frontend:v5'
+              - tier=frontend
+          observationEnabled: false
+          protocolPorts:
+            - tcp/6379
+      name: Allow Front-End to Back-End
+      outgoingRules:
+        - action: Allow
+          logsDisabled: false
+          object:
+            - - $identity=processingunit
+              - '$image=gcr.io/google_samples/gb-redis-follower:v2'
+              - tier=backend
+          observationEnabled: false
+          protocolPorts:
+            - tcp/6379
+        - action: Allow
+          logsDisabled: false
+          object:
+            - - $identity=processingunit
+              - '$image=docker.io/redis:6.0.5'
+              - tier=backend
+          observationEnabled: false
+          protocolPorts:
+            - tcp/6379
+      propagate: true
+      subject:
+        - - $identity=processingunit
+          - '@org:cloudaccount={{.Values.cloudAccount}}'
+          - '@org:group={{.Values.group}}'
+          - '@org:kubernetes={{.Values.ns}}'
+          - '@org:tenant={{.Values.tenant}}'
+          - app=guestbook
+        - - $identity=processingunit
+          - '@org:cloudaccount={{.Values.cloudAccount}}'
+          - '@org:group={{.Values.group}}'
+          - '@org:kubernetes={{.Values.ns}}'
+          - '@org:tenant={{.Values.tenant}}'
+          - app=redis
+    - incomingRules:
+        - action: Allow
+          logsDisabled: false
+          object:
+            - - $identity=processingunit
+              - '$image=gcr.io/google_samples/gb-redis-follower:v2'
+              - tier=backend
+          observationEnabled: false
+          protocolPorts:
+            - tcp/6379
+      name: Allow Internal Redis Communication
+      outgoingRules:
+        - action: Allow
+          logsDisabled: false
+          object:
+            - - $identity=processingunit
+              - '$image=gcr.io/google_samples/gb-frontend:v5'
+              - tier=backend
+          observationEnabled: false
+          protocolPorts:
+            - tcp/6379
+      propagate: true
+      subject:
+        - - $identity=processingunit
+          - '@org:cloudaccount={{.Values.cloudAccount}}'
+          - '@org:group={{.Values.group}}'
+          - '@org:kubernetes={{.Values.ns}}'
+          - '@org:tenant={{.Values.tenant}}'
+          - app=redis
+    - incomingRules:
+        - action: Allow
+          logsDisabled: false
+          object:
+            - - 'externalnetwork:name=Load Balancer'
+          observationEnabled: false
+          protocolPorts:
+            - tcp/80
+      name: Allow Load Balancer to Front-End
+      propagate: true
+      subject:
+        - - $identity=processingunit
+          - '@org:cloudaccount={{.Values.cloudAccount}}'
+          - '@org:group={{.Values.group}}'
+          - '@org:kubernetes={{.Values.ns}}'
+          - '@org:tenant={{.Values.tenant}}'
+          - app=guestbook
+          - tier=frontend
 identities:
-- networkrulesetpolicy
-label: jenkins-guestbook-ruleset
+  - networkrulesetpolicy
+  - externalnetwork
+label: guestbook
